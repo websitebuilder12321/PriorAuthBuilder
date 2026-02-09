@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prior Authorization Note Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .treatment-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px;
+            border-radius: 8px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .toggle-option {
+            flex: 1;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .toggle-option.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .radio-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .radio-item label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+        }
+
+        .si-subsection {
+            margin-left: 26px;
+            margin-top: 10px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+        }
+
+        .medication-entry {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .medication-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .medication-number {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.3s;
+        }
+
+        .remove-btn:hover {
+            background: #dc2626;
+        }
+
+        .med-input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .add-med-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .add-med-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .output-section {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .output-text {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #1f2937;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .copy-btn.copied {
+            background: #6366f1;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        .reason-checkboxes {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .provider-input-container {
+            margin-left: 26px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Prior Authorization Note Generator</h1>
+            <p>Treatment-Resistant Depression</p>
+            
+            <div class="treatment-toggle">
+                <button class="toggle-option active" onclick="switchTreatment('spravato')">Spravato</button>
+                <button class="toggle-option" onclick="switchTreatment('tms')">TMS</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Patient Information -->
+            <div class="section">
+                <div class="section-title">Patient Information</div>
+                <div class="input-group">
+                    <label>Years with Depression</label>
+                    <input type="number" id="yearsDepression" min="0" placeholder="Enter number of years">
+                </div>
+            </div>
+
+            <!-- Symptoms -->
+            <div class="section">
+                <div class="section-title">Depressive Symptoms</div>
+                <label>Select all symptoms that apply:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="anhedonia" value="anhedonia">
+                        <label for="anhedonia">Anhedonia</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="motivation" value="lack of motivation">
+                        <label for="motivation">Lack of Motivation</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="irritability" value="irritability">
+                        <label for="irritability">Irritability</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="fatigue" value="fatigue">
+                        <label for="fatigue">Fatigue</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hopelessness" value="feelings of hopelessness">
+                        <label for="hopelessness">Feelings of Hopelessness</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="sleep" value="sleep disturbances">
+                        <label for="sleep">Sleep Disturbances</label>
+                    </div>
+                </div>
+
+                <!-- Suicidal Ideation Section -->
+                <div class="input-group" style="margin-top: 20px;">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="hasSI" value="suicidal ideation">
+                        <label for="hasSI">Suicidal Ideation</label>
+                    </div>
+                    
+                    <div class="si-subsection" id="siDetails" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 10px;">Type of Suicidal Ideation:</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="siPassive" name="siType" value="passive suicidal ideation">
+                                <label for="siPassive">Passive Suicidal Ideation</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="siActiveNoPlan" name="siType" value="active suicidal ideation without plan/intent">
+                                <label for="siActiveNoPlan">Active Suicidal Ideation without Plan/Intent</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="siActiveWithPlan" name="siType" value="active suicidal ideation with plan/intent">
+                                <label for="siActiveWithPlan">Active Suicidal Ideation with Plan/Intent</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Psychotherapy -->
+            <div class="section">
+                <div class="section-title">Psychotherapy</div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="hasTherapy">
+                    <label for="hasTherapy">Has completed 3 months of psychotherapy</label>
+                </div>
+                <div class="provider-input-container" id="providerContainer" style="display: none;">
+                    <label>Provider Name</label>
+                    <input type="text" id="providerName" placeholder="Enter therapist/provider name">
+                </div>
+            </div>
+
+            <!-- Substance Abuse History -->
+            <div class="section">
+                <div class="section-title">Substance Abuse History</div>
+                <div class="radio-group" style="flex-direction: row; gap: 20px;">
+                    <div class="radio-item">
+                        <input type="radio" id="noSubstance" name="substance" value="no" checked>
+                        <label for="noSubstance">No Current History</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="yesSubstance" name="substance" value="yes">
+                        <label for="yesSubstance">Current History</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHQ9 Score -->
+            <div class="section">
+                <div class="section-title">PHQ9 Score</div>
+                <div class="input-group">
+                    <label>PHQ9 Score (within last 30 days)</label>
+                    <input type="number" id="phq9" min="0" max="27" placeholder="Enter PHQ9 score (0-27)">
+                </div>
+            </div>
+
+            <!-- Medication Trials -->
+            <div class="section">
+                <div class="section-title">Antidepressant Trials</div>
+                <div id="medicationList"></div>
+                <button class="add-med-btn" onclick="addMedication()">+ Add Medication Trial</button>
+            </div>
+
+            <!-- Output -->
+            <div class="output-section">
+                <div class="section-title">Generated Note</div>
+                <div class="output-text" id="outputText">Fill in the form above to generate the prior authorization note...</div>
+                <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let medicationCount = 0;
+        let currentTreatment = 'spravato';
+
+        function switchTreatment(treatment) {
+            currentTreatment = treatment;
+            
+            // Update toggle buttons
+            document.querySelectorAll('.toggle-option').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            generateNote();
+        }
+
+        // Show/hide SI details
+        document.getElementById('hasSI').addEventListener('change', function() {
+            const siDetails = document.getElementById('siDetails');
+            siDetails.style.display = this.checked ? 'block' : 'none';
+            if (!this.checked) {
+                // Uncheck all SI type radios
+                document.querySelectorAll('input[name="siType"]').forEach(radio => {
+                    radio.checked = false;
+                });
+            }
+            generateNote();
+        });
+
+        // Show/hide provider name input
+        document.getElementById('hasTherapy').addEventListener('change', function() {
+            const providerContainer = document.getElementById('providerContainer');
+            providerContainer.style.display = this.checked ? 'block' : 'none';
+            generateNote();
+        });
+
+        function addMedication() {
+            medicationCount++;
+            const medicationList = document.getElementById('medicationList');
+            
+            const medDiv = document.createElement('div');
+            medDiv.className = 'medication-entry';
+            medDiv.id = `med-${medicationCount}`;
+            
+            medDiv.innerHTML = `
+                <div class="medication-header">
+                    <div class="medication-number">Medication Trial #${medicationCount}</div>
+                    <button class="remove-btn" onclick="removeMedication(${medicationCount})">Remove</button>
+                </div>
+                
+                <div class="med-input-row">
+                    <div class="input-group">
+                        <label>Medication Name</label>
+                        <input type="text" class="med-name" placeholder="e.g., Sertraline">
+                    </div>
+                    <div class="input-group">
+                        <label>Dosage</label>
+                        <input type="text" class="med-dose" placeholder="e.g., 100mg daily">
+                    </div>
+                </div>
+                
+                <div class="med-input-row">
+                    <div class="input-group">
+                        <label>Start Date</label>
+                        <input type="date" class="med-start">
+                    </div>
+                    <div class="input-group">
+                        <label>End Date</label>
+                        <input type="date" class="med-end">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <div class="toggle-container">
+                        <label>Currently Taking</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="med-current">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Reason for Discontinuation</label>
+                    <div class="reason-checkboxes">
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="reason-ineffective">
+                            <label>Ineffective</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" class="reason-sideeffect">
+                            <label>Side Effects</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            medicationList.appendChild(medDiv);
+            
+            // Add event listeners to update output
+            medDiv.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', generateNote);
+                input.addEventListener('change', generateNote);
+            });
+            
+            generateNote();
+        }
+
+        function removeMedication(id) {
+            const medDiv = document.getElementById(`med-${id}`);
+            if (medDiv) {
+                medDiv.remove();
+                generateNote();
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+            return `${months[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        function generateNote() {
+            const years = document.getElementById('yearsDepression').value;
+            const phq9 = document.getElementById('phq9').value;
+            
+            // Get selected symptoms
+            const symptoms = [];
+            document.querySelectorAll('.checkbox-group input[type="checkbox"]:checked').forEach(cb => {
+                symptoms.push(cb.value);
+            });
+
+            // Handle suicidal ideation
+            const hasSI = document.getElementById('hasSI').checked;
+            if (hasSI) {
+                const siType = document.querySelector('input[name="siType"]:checked');
+                if (siType) {
+                    symptoms.push(siType.value);
+                } else {
+                    symptoms.push('suicidal ideation');
+                }
+            }
+
+            // Get psychotherapy info
+            const hasTherapy = document.getElementById('hasTherapy').checked;
+            const providerName = document.getElementById('providerName').value;
+            let therapyText = '';
+            if (hasTherapy) {
+                therapyText = ` The patient has completed 3 months of psychotherapy with ${providerName || '[INSERT PROVIDER NAME]'}.`;
+            }
+            
+            // Get substance abuse history
+            const substanceAbuse = document.querySelector('input[name="substance"]:checked').value === 'yes' 
+                ? 'current history of substance abuse' 
+                : 'no current history of substance abuse';
+            
+            // Generate medication list
+            const medications = [];
+            document.querySelectorAll('.medication-entry').forEach(medDiv => {
+                const name = medDiv.querySelector('.med-name').value;
+                const dose = medDiv.querySelector('.med-dose').value;
+                const startDate = medDiv.querySelector('.med-start').value;
+                const endDate = medDiv.querySelector('.med-end').value;
+                const isCurrent = medDiv.querySelector('.med-current').checked;
+                const isIneffective = medDiv.querySelector('.reason-ineffective').checked;
+                const isSideEffect = medDiv.querySelector('.reason-sideeffect').checked;
+                
+                if (name) {
+                    let reasons = [];
+                    if (isIneffective) reasons.push('ineffective');
+                    if (isSideEffect) reasons.push('side effects');
+                    
+                    const reasonText = reasons.length > 0 ? reasons.join(' and ') : 'ongoing treatment';
+                    
+                    medications.push({
+                        name,
+                        dose,
+                        startDate: formatDate(startDate),
+                        endDate: isCurrent ? 'present' : formatDate(endDate),
+                        reason: isCurrent ? 'ongoing treatment' : reasonText
+                    });
+                }
+            });
+            
+            // Generate the note based on treatment type
+            let note = '';
+            
+            if (currentTreatment === 'spravato') {
+                note = `The patient has a history of Major Depressive Disorder and has struggled with depression for approximately ${years || '[INSERT YEARS]'} years. They continue to experience persistent depressive symptoms consistent with DSM-V Criteria, including ${symptoms.length > 0 ? symptoms.join(', ') : '[SELECT SYMPTOMS]'}.${therapyText} Given the patient's treatment resistant depression, persistent symptoms, and inadequate response to multiple antidepressant trials, it is my clinical recommendation to initiate Spravato (esketamine) therapy. The patient has ${substanceAbuse}. The PHQ9 score obtained within the last 30 days was ${phq9 || '[INSERT PHQ9 SCORE]'}. The patient has trialed and failed at least two antidepressants from different medications classes including:\n`;
+            } else {
+                // TMS template - you'll need to provide the exact wording you want
+                note = `The patient has a history of Major Depressive Disorder and has struggled with depression for approximately ${years || '[INSERT YEARS]'} years. They continue to experience persistent depressive symptoms consistent with DSM-V Criteria, including ${symptoms.length > 0 ? symptoms.join(', ') : '[SELECT SYMPTOMS]'}.${therapyText} Given the patient's treatment resistant depression, persistent symptoms, and inadequate response to multiple antidepressant trials, it is my clinical recommendation to initiate Transcranial Magnetic Stimulation (TMS) therapy. The patient has ${substanceAbuse}. The PHQ9 score obtained within the last 30 days was ${phq9 || '[INSERT PHQ9 SCORE]'}. The patient has trialed and failed at least two antidepressants from different medications classes including:\n`;
+            }
+            
+            if (medications.length > 0) {
+                medications.forEach(med => {
+                    note += `\n* ${med.name} - ${med.dose || '[DOSAGE]'}, started approximately ${med.startDate || '[START DATE]'}, discontinued ${med.endDate || '[END DATE]'}, due to ${med.reason}`;
+                });
+            } else {
+                note += '\n[Add medication trials using the form above]';
+            }
+            
+            document.getElementById('outputText').textContent = note;
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('outputText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.textContent = 'Copy to Clipboard';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Add event listeners to all inputs
+        document.getElementById('yearsDepression').addEventListener('input', generateNote);
+        document.getElementById('phq9').addEventListener('input', generateNote);
+        document.getElementById('providerName').addEventListener('input', generateNote);
+        document.querySelectorAll('.checkbox-group input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', generateNote);
+        });
+        document.querySelectorAll('input[name="substance"]').forEach(radio => {
+            radio.addEventListener('change', generateNote);
+        });
+        document.querySelectorAll('input[name="siType"]').forEach(radio => {
+            radio.addEventListener('change', generateNote);
+        });
+
+        // Initialize with first medication entry
+        addMedication();
+        generateNote();
+    </script>
+</body>
+</html>
